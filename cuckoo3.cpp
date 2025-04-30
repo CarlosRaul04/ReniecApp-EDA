@@ -8,8 +8,12 @@
 #include <chrono>
 #include <unordered_map>
 #include <algorithm>
-#include "Persona.h"  // Incluir el archivo de encabezado para la clase Persona
+#include "Persona.h"  
 
+using namespace std;
+using namespace std::chrono;
+
+// Tabla de Cuckoo Hash modificada solo para almacenar DNIs
 using namespace std;
 using namespace std::chrono;
 
@@ -17,121 +21,116 @@ using namespace std::chrono;
 template <typename K>
 class CuckooHash {
 private:
-    vector<K> table1;
-    vector<K> table2;
-    size_t size1, size2;
-    float loadFactor;
-    size_t totalRegistros;
-
-    // Función de hash para la primera tabla
-    size_t hash1(K key) {
-        return key % size1;
-    }
-
-    // Función de hash para la segunda tabla
-    size_t hash2(K key) {
-        return (key / size2) % size2;
-    }
-
-    // Rehashing para la primera tabla
-    void rehash1(K key) {
-        size_t index = hash1(key);
-        if (table1[index] != 0) {
-            auto temp = table1[index];
-            table1[index] = key;
-            rehash2(temp);
-        } else {
-            table1[index] = key;
-        }
-        totalRegistros++;
-        verificarFactorDeCarga();
-    }
-
-    // Rehashing para la segunda tabla
-    void rehash2(K key) {
-        size_t index = hash2(key);
-        if (table2[index] != 0) {
-            auto temp = table2[index];
-            table2[index] = key;
-            rehash1(temp);
-        } else {
-            table2[index] = key;
-        }
-        totalRegistros++;
-        verificarFactorDeCarga();
-    }
-
-    // Verificar el factor de carga y redimensionar las tablas si es necesario
-    void verificarFactorDeCarga() {
-        float actualLoadFactor = float(totalRegistros) / (size1 + size2);
-        if (actualLoadFactor > loadFactor) {
-            cout << "El factor de carga ha superado el umbral. Redimensionando tablas..." << endl;
-            redimensionarTablas();
-        }
-    }
-
-    // Redimensionar las tablas cuando se supera el factor de carga
-    void redimensionarTablas() {
-        size_t nuevaSize1 = ceil(size1 * 1.5);
-        size_t nuevaSize2 = ceil(size2 * 1.5);
-
-        vector<K> nuevaTable1(nuevaSize1, 0);
-        vector<K> nuevaTable2(nuevaSize2, 0);
-
-        for (size_t i = 0; i < size1; ++i) {
-            if (table1[i] != 0) {
-                rehash1(table1[i]);
-            }
-        }
-        for (size_t i = 0; i < size2; ++i) {
-            if (table2[i] != 0) {
-                rehash2(table2[i]);
-            }
-        }
-
-        size1 = nuevaSize1;
-        size2 = nuevaSize2;
-        table1 = move(nuevaTable1);
-        table2 = move(nuevaTable2);
-    }
-
+	vector<K> table1;
+	vector<K> table2;
+	size_t size1, size2;
+	float loadFactor;
+	size_t totalRegistros;
+	
+	size_t hash1(K key) {
+		return key % size1;
+	}
+	
+	size_t hash2(K key) {
+		return (key / size2) % size2;
+	}
+	
+	void rehash1(K key) {
+		size_t index = hash1(key);
+		if (table1[index] != 0) {
+			auto temp = table1[index];
+			table1[index] = key;
+			rehash2(temp);
+		} else {
+			table1[index] = key;
+		}
+		totalRegistros++;
+		verificarFactorDeCarga();
+	}
+	
+	void rehash2(K key) {
+		size_t index = hash2(key);
+		if (table2[index] != 0) {
+			auto temp = table2[index];
+			table2[index] = key;
+			rehash1(temp);
+		} else {
+			table2[index] = key;
+		}
+		totalRegistros++;
+		verificarFactorDeCarga();
+	}
+	
+	void verificarFactorDeCarga() {
+		float actualLoadFactor = float(totalRegistros) / (size1 + size2);
+		if (actualLoadFactor > loadFactor) {
+			cout << "El factor de carga ha superado el umbral. Redimensionando tablas..." << endl;
+			redimensionarTablas();
+		}
+	}
+	
+	void redimensionarTablas() {
+		size_t nuevaSize1 = ceil(size1 * 1.5);
+		size_t nuevaSize2 = ceil(size2 * 1.5);
+		
+		// Guardamos los elementos actuales
+		vector<K> antiguos;
+		for (const auto& val : table1) {
+			if (val != 0) antiguos.push_back(val);
+		}
+		for (const auto& val : table2) {
+			if (val != 0) antiguos.push_back(val);
+		}
+		
+		// Redimensionamos y reinicializamos
+		size1 = nuevaSize1;
+		size2 = nuevaSize2;
+		table1 = vector<K>(size1, 0);
+		table2 = vector<K>(size2, 0);
+		totalRegistros = 0;
+		
+		// Reinsertamos los elementos
+		for (const auto& key : antiguos) {
+			insert(key);
+		}
+		
+		cout << "Redimensionadas las tablas a tamaños: " << size1 << " y " << size2 << endl;
+	}
+	
 public:
-    CuckooHash(size_t s1, size_t s2, float lf = 0.7) : size1(s1), size2(s2), loadFactor(lf), totalRegistros(0) {
-        table1.resize(size1, 0);
-        table2.resize(size2, 0);
-    }
-
-    void insert(K key) {
-        rehash1(key);
-    }
-
-    bool search(K key) {
-        // Calcular índices directamente
-        size_t index1 = hash1(key);
-        size_t index2 = hash2(key);
-
-        // Comprobar ambas posiciones en las tablas
-        return table1[index1] == key || table2[index2] == key;
-    }
-
-    void remove(K key) {
-        size_t index1 = hash1(key);
-        if (table1[index1] == key) {
-            table1[index1] = 0;
-            totalRegistros--;
-            return;
-        }
-
-        size_t index2 = hash2(key);
-        if (table2[index2] == key) {
-            table2[index2] = 0;
-            totalRegistros--;
-            return;
-        }
-    }
+		CuckooHash(size_t s1, size_t s2, float lf = 0.7) : size1(s1), size2(s2), loadFactor(lf), totalRegistros(0) {
+			table1.resize(size1, 0);
+			table2.resize(size2, 0);
+		}
+		
+		void insert(K key) {
+			rehash1(key);
+		}
+		
+		bool search(K key) {
+			size_t index1 = hash1(key);
+			size_t index2 = hash2(key);
+			return table1[index1] == key || table2[index2] == key;
+		}
+		
+		void remove(K key) {
+			size_t index1 = hash1(key);
+			if (table1[index1] == key) {
+				table1[index1] = 0;
+				totalRegistros--;
+				return;
+			}
+			
+			size_t index2 = hash2(key);
+			if (table2[index2] == key) {
+				table2[index2] = 0;
+				totalRegistros--;
+				return;
+			}
+		}
 };
 
-// Función para realizar búsqueda binaria en el archivo binario de personas
+// Funcion para realizar busqueda binaria en el archivo binario de personas
 bool buscarPersonaBinaria(const string& nombreArchivo, uint32_t dni, Persona& persona) {
     ifstream archivo(nombreArchivo, ios::binary);
     if (!archivo) {
@@ -166,7 +165,7 @@ bool buscarPersonaBinaria(const string& nombreArchivo, uint32_t dni, Persona& pe
 }
 
 
-// Función para mostrar la información de una persona
+// Funcion para mostrar la informacion de una persona
 void mostrarPersona(const Persona& persona) {
     cout << "DNI: " << persona.dni << endl;
     cout << "Nombres: " << persona.nombres[0].data() << " " << persona.nombres[1].data() << endl;
@@ -179,7 +178,7 @@ void mostrarPersona(const Persona& persona) {
     cout << "Estado Civil: " << persona.estadoCivil.data() << endl;
 }
 
-// Función para agregar una nueva persona en el archivo binario
+// Funcion para agregar una nueva persona en el archivo binario
 void insertarPersona(CuckooHash<uint32_t>& cuckooHash, const string& nombreArchivo, unordered_map<uint32_t, Persona>& cache) {
     Persona persona;
 
@@ -230,11 +229,11 @@ void insertarPersona(CuckooHash<uint32_t>& cuckooHash, const string& nombreArchi
 
     archivo.write(reinterpret_cast<const char*>(&persona), sizeof(Persona));
     cuckooHash.insert(persona.dni); // Insertar en la tabla hash
-    cache[persona.dni] = persona;  // Agregar al caché
+    cache[persona.dni] = persona;  // Agregar al cache
     cout << "Persona agregada correctamente." << endl;
 }
 
-// Función para eliminar una persona del archivo binario
+// Funcion para eliminar una persona del archivo binario
 bool eliminarPersonaEnArchivo(const string& nombreArchivo, uint32_t dni) {
     fstream archivo(nombreArchivo, ios::binary | ios::in | ios::out);
     if (!archivo) {
@@ -249,7 +248,7 @@ bool eliminarPersonaEnArchivo(const string& nombreArchivo, uint32_t dni) {
     while (archivo.read(reinterpret_cast<char*>(&persona), sizeof(Persona))) {
         if (persona.dni == dni) {
             persona.activo = false; // Marcar como inactiva
-            // Mover el puntero del archivo al inicio de la posición actual para sobrescribir
+            // Mover el puntero del archivo al inicio de la posicion actual para sobrescribir
             archivo.seekp(-static_cast<int>(sizeof(Persona)), ios::cur);
             archivo.write(reinterpret_cast<const char*>(&persona), sizeof(Persona));
             encontrado = true;
@@ -278,9 +277,9 @@ int main() {
         cuckooHash.insert(persona.dni);
     }
 
-    // Menú de opciones
+    // Menu de opciones
     while (true) {
-        cout << "\nMenu� de Opciones: " << endl;
+        cout << "\nMenuº de Opciones: " << endl;
         cout << "1. Buscar persona" << endl;
         cout << "2. Agregar persona" << endl;
         cout << "3. Eliminar persona" << endl;
@@ -290,7 +289,7 @@ int main() {
         cin >> opcion;
         while (cin.fail()) {
             cin.clear(); // Limpiar el estado de error
-            cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Descartar la entrada inválida
+            cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Descartar la entrada invÃ¡lida
             cout << "Entrada invalida. Por favor, ingrese una opcion valida: ";
             cin >> opcion; // Reintentar la entrada
         }
@@ -301,7 +300,7 @@ int main() {
             cin >> dni;
             while (cin.fail()) {
                 cin.clear(); // Limpiar el estado de error
-                cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Descartar la entrada inválida
+                cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Descartar la entrada invalida
                 cout << "Entrada invalida. Por favor, ingrese un DNI valido: ";
                 cin >> dni; // Reintentar la entrada
             }
@@ -309,9 +308,9 @@ int main() {
             auto start = high_resolution_clock::now();
 
             if (!cuckooHash.search(dni)) {
-                cout << "El DNI no esta� registrado en el sistema. No se puede realizar la busqueda." << endl;
+                cout << "El DNI no esta¡ registrado en el sistema. No se puede realizar la busqueda." << endl;
             } else {
-                // Si el DNI está en el Cuckoo Hash, realizar la búsqueda
+                // Si el DNI esta en el Cuckoo Hash, realizar la busqueda
                 if (cache.find(dni) != cache.end()) {
                     mostrarPersona(cache[dni]);
                 } else {
@@ -326,7 +325,7 @@ int main() {
 
             auto end = high_resolution_clock::now();
             auto duration = duration_cast<milliseconds>(end - start);
-            cout << "Tiempo de b�squeda: " << duration.count() << "ms" << endl;
+            cout << "Tiempo de búsqueda: " << duration.count() << "ms" << endl;
         } else if (opcion == 2) {
             insertarPersona(cuckooHash, nombreArchivo, cache);
         } else if (opcion == 3) {
@@ -335,7 +334,7 @@ int main() {
             cin >> dni;
             while (cin.fail()) {
                 cin.clear(); // Limpiar el estado de error
-                cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Descartar la entrada inválida
+                cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Descartar la entrada invalida
                 cout << "Entrada invalida. Por favor, ingrese un DNI valido: ";
                 cin >> dni; // Reintentar la entrada
             }
@@ -355,7 +354,7 @@ int main() {
         } else if (opcion == 4) {
             break;
         } else {
-            cout << "Opci�n no v�lida." << endl;
+            cout << "Opción no válida." << endl;
         }
     }
 
