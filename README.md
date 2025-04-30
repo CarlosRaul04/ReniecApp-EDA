@@ -12,15 +12,6 @@ Almacenar y gestionar hasta **33 millones de personas** con rapidez y eficiencia
 - Genera millones de ciudadanos falsos con datos como nombres, apellidos, dirección, correo, teléfono, etc.
 - Almacena los datos en un archivo binario (`registros.bin`) para optimizar el uso de memoria.
 - Usa una estructura **Cuckoo Hash** para acelerar las búsquedas, inserciones y eliminaciones.
-
----
-
-## 💡 ¿Qué tan rápido es?
-
-El sistema puede:
-
-- Buscar un ciudadano por su DNI en milisegundos.
-- Redimensionar automáticamente su estructura interna cuando sea necesario.
 - Incorpora un sistema de caché en memoria para mejorar aún más el rendimiento.
 ---
 
