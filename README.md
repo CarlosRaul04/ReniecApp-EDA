@@ -44,7 +44,9 @@ Puedes abrir y compilar este proyecto fácilmente desde un entorno gráfico como
 
 ## 🧪 Menú interactivo del sistema
 
-Cuando ejecutes `reniec_system.cpp`, verás algo como esto:
+Cuando ejecutes `reniec_system.cpp`, verás algo como esto (Demorará unos 30 segundos en crear las tablas del cuckoo y posicionar los datos):
+
+![image](https://github.com/user-attachments/assets/40cf0baa-f3bf-4505-9af8-170f1046b868)
 
 
 
