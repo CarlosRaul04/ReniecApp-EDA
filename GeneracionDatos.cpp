@@ -30,10 +30,10 @@ void generarYExportarDatos(const string& nombreArchivo, int cantidad, int tamano
         persona.dni = dni_inicial + i;
         Persona::generarNombres(persona.nombres, i);
         Persona::generarApellidos(persona.apellidos);
-        Persona::copiarStringAArray("Peru�", persona.nacionalidad);
+        Persona::copiarStringAArray("Peruº", persona.nacionalidad);
         Persona::generarLugarNacimiento(persona.lugarNacimiento);
         Persona::generarDireccion(persona.direccion);
-        Persona::generarTelefono(persona.telefono);  // Aquí estamos llamando correctamente a la función
+        Persona::generarTelefono(persona.telefono);  // AquÃ­ estamos llamando correctamente a la funciÃ³n
         Persona::generarCorreo(persona.nombres, persona.correo);
         Persona::generarEstadoCivil(persona.estadoCivil);
         persona.activo = true;
@@ -53,7 +53,7 @@ void generarYExportarDatos(const string& nombreArchivo, int cantidad, int tamano
 
 int main() {
     srand(static_cast<unsigned int>(time(0)));
-    int cantidad = 1000000;
+    int cantidad = 33000000; //Cantidad de ciudadanos a generar
 
     auto start = high_resolution_clock::now();
 
